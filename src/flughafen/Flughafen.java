@@ -1,8 +1,15 @@
 package flughafen;
 
+import himmel.graphics.Shader;
 import himmel.graphics.Window;
+import himmel.graphics.renderables.Sprite;
+import himmel.graphics.renderers.FastRenderer;
+import himmel.graphics.renderers.RenderingSet;
+import himmel.math.Matrix4f;
+import org.lwjgl.BufferUtils;
 
 import java.io.IOException;
+import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
 
@@ -12,6 +19,10 @@ import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
 public class Flughafen {
     private Window window;
     private Settings settings;
+
+    private RenderingSet spriteRenderingSet;
+
+    private LoadingScreen loadingScreen;
 
     public Flughafen() {
         init();
@@ -37,6 +48,10 @@ public class Flughafen {
                 settings.getWindowAntiAliasing(), settings.getWindowVsync(), settings.getWindowFullscreen(),
                 settings.getWindowWireframe(), settings.getWindowLog());
         window.resetMousePos(settings.getWindowWidth() / 2.0f, settings.getWindowHeight() / 2.0f);
+
+        initRenderingSets();
+
+        loadingScreen = new LoadingScreen(window.getWidth(), window.getHeight());
 
         System.out.println("Init took " + (System.currentTimeMillis() - initStartTime) + "ms");
     }
@@ -96,7 +111,7 @@ public class Flughafen {
             // FPS and UPS counter
             if (secondsTimeCounter >= 1.0f) {
                 secondsTimeCounter -= 1.0f;
-                System.out.println("UPS: " + upsCounter + " | FPS: " + fpsCounter + " | Delta: " + (delta * 1000000.0d) + "ms");
+                System.out.println("UPS: " + upsCounter + " | FPS: " + fpsCounter + " | Delta: " + (delta * 1000000.0d) + "mks");
                 upsCounter = 0;
                 fpsCounter = 0;
             }
@@ -106,11 +121,39 @@ public class Flughafen {
     }
 
     private void update(float delta) {
-
+        loadingScreen.update(delta);
+//        if (loadingScreen.isFinished()) {
+//            System.out.println("dgf");
+//            terminate();
+//            System.exit(0);
+//        }
     }
 
     private void render() {
+        loadingScreen.render();
+    }
 
+    private void initShaders() {
+        int values[] = new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+        IntBuffer textureIDs = BufferUtils.createIntBuffer(values.length);
+        textureIDs.put(values);
+        textureIDs.rewind();
+
+        spriteRenderingSet.getShader().enable();
+        spriteRenderingSet.getShader().setUniform1iv("textures", textureIDs);
+        spriteRenderingSet.getShader().setUniformMat4f("pr_matrix",
+                Matrix4f.orthographic(0.0f, window.getWidth(), 0.0f, window.getHeight(), -1.0f, 1.0f));
+    }
+
+    private void initRenderingSets() {
+        spriteRenderingSet = new RenderingSet(
+                FastRenderer::new,
+                new Shader(System.getProperty("user.dir") + "//res//shaders//sprite.vert",
+                        System.getProperty("user.dir") + "//res//shaders//sprite.frag"));
+
+        initShaders();
+
+        Sprite.setRenderingSet(spriteRenderingSet);
     }
 
     private void terminate() {
