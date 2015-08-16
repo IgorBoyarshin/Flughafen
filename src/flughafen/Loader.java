@@ -6,7 +6,7 @@ package flughafen;
 public class Loader {
     private Thread loadingThread;
 
-    private volatile boolean finished;
+    private boolean finished;
 
     public Loader() {
         finished = false;

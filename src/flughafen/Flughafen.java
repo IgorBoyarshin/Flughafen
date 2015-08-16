@@ -2,16 +2,27 @@ package flughafen;
 
 import himmel.graphics.Shader;
 import himmel.graphics.Window;
+import himmel.graphics.camera.Camera;
+import himmel.graphics.camera.Direction;
+import himmel.graphics.camera.SimpleCamera;
+import himmel.graphics.layers.Layer;
+import himmel.graphics.renderables.Cube;
 import himmel.graphics.renderables.Sprite;
 import himmel.graphics.renderers.FastRenderer;
+import himmel.graphics.renderers.Renderer3D;
 import himmel.graphics.renderers.RenderingSet;
+import himmel.graphics.renderers.TerrainRenderer;
 import himmel.math.Matrix4f;
+import himmel.math.Vector2f;
+import himmel.math.Vector3f;
+import himmel.math.Vector4f;
 import org.lwjgl.BufferUtils;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
 
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_C;
 
 /**
  * Created by Igor on 15-Aug-15.
@@ -21,9 +32,15 @@ public class Flughafen {
     private Settings settings;
 
     private RenderingSet spriteRenderingSet;
+    private RenderingSet terrainRenderingSet;
+    private RenderingSet object3dRenderingSet;
 
     private LoadingScreen loadingScreen;
     private Loader loader;
+    private Terrain terrain;
+    private Layer mainLayer;
+
+    private Camera camera;
 
     public Flughafen() {
         init();
@@ -57,7 +74,88 @@ public class Flughafen {
         loader = new Loader();
         loader.launch();
 
+        camera = new SimpleCamera(new Vector3f(0.0f, 0.0f, 0.0f));
+
+        mainLayer = new Layer();
+        Cube cube = new Cube(new Vector3f(0.0f, 0.0f, -5.0f), new Vector3f(2.0f, 2.0f, 2.0f),
+                new Vector4f(0.8f, 0.5f, 0.1f, 1.0f), object3dRenderingSet);
+        mainLayer.add(cube);
+
+        terrain = new Terrain(terrainRenderingSet);
+//        window.setWireframe(true);
+
         System.out.println("Init took " + (System.currentTimeMillis() - initStartTime) + "ms");
+    }
+
+    private void update(float delta) {
+//        if (!loadingScreen.isFinished()) {
+        if (false) {
+            loadingScreen.update(delta);
+        } else {
+            if (loader.isFinished()) {
+                // Everything is loaded, start the game
+
+                keyboard(delta);
+
+                mainLayer.update();
+            }
+        }
+    }
+
+    private void render() {
+        window.clear();
+
+//        if (!loadingScreen.isFinished()) {
+        if (false) {
+            loadingScreen.render();
+        } else {
+            if (loader.isFinished()) {
+                // Everything is loaded, start the game
+
+                mainLayer.render();
+                terrain.render();
+            }
+        }
+
+
+        window.swapBuffers();
+    }
+
+    private void keyboard(float delta) {
+        terrainRenderingSet.getShader().enable();
+        terrainRenderingSet.getShader().setUniformMat4f("vw_matrix", camera.getViewMatrix());
+        object3dRenderingSet.getShader().enable();
+        object3dRenderingSet.getShader().setUniformMat4f("vw_matrix", camera.getViewMatrix());
+
+        Vector2f mousePos = window.getMousePos();
+        final float speed = 10.0f;
+        final float rotationSpeed = 0.18f;
+        if (window.isKeyPressed(GLFW_KEY_W)) {
+            camera.move(Direction.FORWARD, speed * delta);
+        }
+        if (window.isKeyPressed(GLFW_KEY_S)) {
+            camera.move(Direction.FORWARD, -speed * delta);
+        }
+        if (window.isKeyPressed(GLFW_KEY_A)) {
+            camera.move(Direction.RIGHT, speed * delta);
+        }
+        if (window.isKeyPressed(GLFW_KEY_D)) {
+            camera.move(Direction.RIGHT, -speed * delta);
+        }
+        if (window.isKeyPressed(GLFW_KEY_Z)) {
+            camera.move(Direction.UP, speed * delta);
+        }
+        if (window.isKeyPressed(GLFW_KEY_X)) {
+            camera.move(Direction.UP, -speed * delta);
+        }
+
+        if (window.isKeyPressed(GLFW_KEY_C)) {
+            camera.printPosition();
+        }
+
+        camera.setYaw(camera.getYaw() - rotationSpeed * (mousePos.x - window.getWidth() / 2.0f));
+        camera.setPitch(camera.getPitch() - rotationSpeed * (mousePos.y - window.getHeight() / 2.0f));
+        window.resetMousePos(window.getWidth() / 2.0f, window.getHeight() / 2.0f);
     }
 
     private void mainLoop() {
@@ -120,26 +218,6 @@ public class Flughafen {
         }
     }
 
-    private void update(float delta) {
-        if (!loadingScreen.isFinished()) {
-            loadingScreen.update(delta);
-        } else {
-            if (loader.isFinished()) {
-                // Everything is loaded, start the game
-            }
-        }
-    }
-
-    private void render() {
-        window.clear();
-
-
-        loadingScreen.render();
-
-
-        window.swapBuffers();
-    }
-
     private void initShaders() {
         int values[] = new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
         IntBuffer textureIDs = BufferUtils.createIntBuffer(values.length);
@@ -150,6 +228,16 @@ public class Flughafen {
         spriteRenderingSet.getShader().setUniform1iv("textures", textureIDs);
         spriteRenderingSet.getShader().setUniformMat4f("pr_matrix",
                 Matrix4f.orthographic(0.0f, window.getWidth(), 0.0f, window.getHeight(), -1.0f, 1.0f));
+
+        terrainRenderingSet.getShader().enable();
+        terrainRenderingSet.getShader().setUniform1iv("textures", textureIDs);
+        terrainRenderingSet.getShader().setUniformMat4f("pr_matrix",
+                Matrix4f.perspective(window.getWidth(), window.getHeight(), 67.0f, 0.1f, 500.0f));
+
+        object3dRenderingSet.getShader().enable();
+        object3dRenderingSet.getShader().setUniform1iv("textures", textureIDs);
+        object3dRenderingSet.getShader().setUniformMat4f("pr_matrix",
+                Matrix4f.perspective(window.getWidth(), window.getHeight(), 67.0f, 0.1f, 500.0f));
     }
 
     private void initRenderingSets() {
@@ -157,6 +245,14 @@ public class Flughafen {
                 FastRenderer::new,
                 new Shader(System.getProperty("user.dir") + "//res//shaders//sprite.vert",
                         System.getProperty("user.dir") + "//res//shaders//sprite.frag"));
+        terrainRenderingSet = new RenderingSet(
+                TerrainRenderer::new,
+                new Shader(System.getProperty("user.dir") + "//res//shaders//terrain.vert",
+                        System.getProperty("user.dir") + "//res//shaders//terrain.frag"));
+        object3dRenderingSet = new RenderingSet(
+                Renderer3D::new,
+                new Shader(System.getProperty("user.dir") + "//res//shaders//object3d.vert",
+                        System.getProperty("user.dir") + "//res//shaders//object3d.frag"));
 
         initShaders();
 
