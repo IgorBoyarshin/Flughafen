@@ -24,7 +24,7 @@ public class LoadingScreen {
 
     // In ms
 
-    private final double delay = 500;
+    private final double delay = 900;
     private final double fading = 1200;
     private final double visialble = 1500;
 
