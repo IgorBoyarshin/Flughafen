@@ -23,6 +23,7 @@ public class Flughafen {
     private RenderingSet spriteRenderingSet;
 
     private LoadingScreen loadingScreen;
+    private Loader loader;
 
     public Flughafen() {
         init();
@@ -52,6 +53,9 @@ public class Flughafen {
         initRenderingSets();
 
         loadingScreen = new LoadingScreen(window.getWidth(), window.getHeight());
+
+        loader = new Loader();
+        loader.launch();
 
         System.out.println("Init took " + (System.currentTimeMillis() - initStartTime) + "ms");
     }
@@ -92,20 +96,16 @@ public class Flughafen {
             // Render
             if (rendersPerSecond == -1) {
                 rendersTimeCounter = 0;
-                window.clear();
 
                 render();
 
                 fpsCounter++;
-                window.swapBuffers();
             } else if (rendersTimeCounter >= timePerRender) {
                 rendersTimeCounter -= timePerRender;
-                window.clear();
 
                 render();
 
                 fpsCounter++;
-                window.swapBuffers();
             }
 
             // FPS and UPS counter
@@ -121,16 +121,23 @@ public class Flughafen {
     }
 
     private void update(float delta) {
-        loadingScreen.update(delta);
-//        if (loadingScreen.isFinished()) {
-//            System.out.println("dgf");
-//            terminate();
-//            System.exit(0);
-//        }
+        if (!loadingScreen.isFinished()) {
+            loadingScreen.update(delta);
+        } else {
+            if (loader.isFinished()) {
+                // Everything is loaded, start the game
+            }
+        }
     }
 
     private void render() {
+        window.clear();
+
+
         loadingScreen.render();
+
+
+        window.swapBuffers();
     }
 
     private void initShaders() {
