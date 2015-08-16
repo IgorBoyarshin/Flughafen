@@ -26,5 +26,5 @@ void main()
 	vs_out.position = vec3(worldPosition.x, worldPosition.y, worldPosition.z);
 	vec4 transformedNormal = ml_matrix * vec4(normal, 0.0);
 	vs_out.normal = vec3(transformedNormal.x, transformedNormal.y, transformedNormal.z);
-	vs_out.uv = uv * 3;
+	vs_out.uv = uv * 4;
 }

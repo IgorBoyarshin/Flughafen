@@ -74,7 +74,7 @@ public class Flughafen {
         loader = new Loader();
         loader.launch();
 
-        camera = new SimpleCamera(new Vector3f(0.0f, 0.0f, 0.0f));
+        camera = new SimpleCamera(new Vector3f(0.0f, 2.0f, 0.0f));
 
         mainLayer = new Layer();
         Cube cube = new Cube(new Vector3f(0.0f, 0.0f, -5.0f), new Vector3f(2.0f, 2.0f, 2.0f),
@@ -153,6 +153,7 @@ public class Flughafen {
             camera.printPosition();
         }
 
+//        camera.setPosition(new Vector3f(camera.getPosition().x, 2.0f, camera.getPosition().z));
         camera.setYaw(camera.getYaw() - rotationSpeed * (mousePos.x - window.getWidth() / 2.0f));
         camera.setPitch(camera.getPitch() - rotationSpeed * (mousePos.y - window.getHeight() / 2.0f));
         window.resetMousePos(window.getWidth() / 2.0f, window.getHeight() / 2.0f);
@@ -232,12 +233,12 @@ public class Flughafen {
         terrainRenderingSet.getShader().enable();
         terrainRenderingSet.getShader().setUniform1iv("textures", textureIDs);
         terrainRenderingSet.getShader().setUniformMat4f("pr_matrix",
-                Matrix4f.perspective(window.getWidth(), window.getHeight(), 67.0f, 0.1f, 500.0f));
+                Matrix4f.perspective(window.getWidth(), window.getHeight(), 67.0f, 0.01f, 500.0f));
 
         object3dRenderingSet.getShader().enable();
         object3dRenderingSet.getShader().setUniform1iv("textures", textureIDs);
         object3dRenderingSet.getShader().setUniformMat4f("pr_matrix",
-                Matrix4f.perspective(window.getWidth(), window.getHeight(), 67.0f, 0.1f, 500.0f));
+                Matrix4f.perspective(window.getWidth(), window.getHeight(), 67.0f, 0.01f, 500.0f));
     }
 
     private void initRenderingSets() {
